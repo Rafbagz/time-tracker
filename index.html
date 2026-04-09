@@ -988,6 +988,10 @@
 
         setTimeout(() => {
           document.addEventListener('click', function outside(e) {
+            if (!document.contains(addTile)) {
+              document.removeEventListener('click', outside);
+              return;
+            }
             if (!addTile.contains(e.target)) {
               cancel();
               document.removeEventListener('click', outside);
