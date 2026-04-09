@@ -417,6 +417,22 @@
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     }
 
+    .grid--empty {
+      display: flex;
+      justify-content: center;
+      min-height: 50vh;
+      align-items: center;
+    }
+
+    .grid--empty .tile-add {
+      width: 260px;
+    }
+
+    #suggestions {
+      justify-content: center;
+      margin-top: 8px;
+    }
+
     /* ── Tile ── */
     .tile {
       --color: #6c63ff;
@@ -728,20 +744,13 @@
 </div>
 
 <main>
-  <div class="empty-state" id="emptyState">
-    <svg width="56" height="56" viewBox="0 0 64 64" fill="none">
-      <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="2"/>
-      <path d="M32 18v14l8 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-    </svg>
-    <p>Ajoutez une activité pour commencer à tracker votre temps.</p>
-    <div class="suggestions" id="suggestions">
-      <button class="suggestion-chip" data-suggest="Réunion">Réunion</button>
-      <button class="suggestion-chip" data-suggest="Email">Email</button>
-      <button class="suggestion-chip" data-suggest="Focus">Focus</button>
-      <button class="suggestion-chip" data-suggest="Dev">Dev</button>
-    </div>
-  </div>
   <div class="grid" id="grid"></div>
+  <div class="suggestions" id="suggestions" style="display:none">
+    <button class="suggestion-chip" data-suggest="Réunion">Réunion</button>
+    <button class="suggestion-chip" data-suggest="Email">Email</button>
+    <button class="suggestion-chip" data-suggest="Focus">Focus</button>
+    <button class="suggestion-chip" data-suggest="Dev">Dev</button>
+  </div>
 </main>
 
 <footer>
@@ -899,6 +908,7 @@
 
     empty.style.display = 'none';
     grid.innerHTML = '';
+    const suggestions = document.getElementById('suggestions');
 
     sorted().forEach(a => {
       const tile = document.createElement('div');
@@ -984,6 +994,10 @@
       });
       grid.appendChild(addTile);
     }
+
+    const isEmpty = activities.length === 0;
+    grid.classList.toggle('grid--empty', isEmpty);
+    suggestions.style.display = isEmpty ? 'flex' : 'none';
 
     // Event delegation
     grid.querySelectorAll('[data-delete]').forEach(btn => {
