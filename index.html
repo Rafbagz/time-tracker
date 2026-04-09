@@ -904,11 +904,9 @@
   // ── Render ───────────────────────────────────────────────────────────────
   function render() {
     const grid  = document.getElementById('grid');
-    const empty = document.getElementById('emptyState');
-
-    empty.style.display = 'none';
-    grid.innerHTML = '';
     const suggestions = document.getElementById('suggestions');
+
+    grid.innerHTML = '';
 
     sorted().forEach(a => {
       const tile = document.createElement('div');
