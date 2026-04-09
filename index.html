@@ -417,11 +417,16 @@
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     }
 
+    main.main--empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
     .grid--empty {
       display: flex;
       justify-content: center;
-      min-height: 50vh;
-      align-items: center;
     }
 
     .grid--empty .tile-add {
@@ -430,7 +435,7 @@
 
     #suggestions {
       justify-content: center;
-      margin-top: 8px;
+      margin-top: 12px;
     }
 
     /* ── Tile ── */
@@ -996,6 +1001,7 @@
     const isEmpty = activities.length === 0;
     grid.classList.toggle('grid--empty', isEmpty);
     suggestions.style.display = isEmpty ? 'flex' : 'none';
+    document.querySelector('main').classList.toggle('main--empty', isEmpty);
 
     // Event delegation
     grid.querySelectorAll('[data-delete]').forEach(btn => {
