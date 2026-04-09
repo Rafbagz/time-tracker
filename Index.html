@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Time Tracker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f13;
+      --surface: #1a1a24;
+      --border: rgba(255,255,255,0.07);
+      --text: #f0f0f5;
+      --muted: rgba(240,240,245,0.45);
+      --radius: 20px;
+      --transition: 0.2s ease;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 28px 32px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    header h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      line-height: 1;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: flex-end;
+      gap: 20px;
+    }
+
+    .btn-end-session {
+      background: none;
+      border: 1px solid rgba(255,100,100,0.3);
+      border-radius: 10px;
+      color: rgba(255,130,130,0.55);
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 8px 16px;
+      transition: background var(--transition), border-color var(--transition), color var(--transition);
+      white-space: nowrap;
+    }
+
+    .btn-end-session.active {
+      border-color: rgba(255,100,100,0.55);
+      color: rgba(255,140,140,0.9);
+    }
+
+    .btn-end-session:hover {
+      background: rgba(255,100,100,0.08);
+      border-color: rgba(255,100,100,0.65);
+      color: #ff9090;
+    }
+
+    .header-total {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.6;
+      text-align: right;
+    }
+
+    .header-total strong {
+      color: var(--text);
+      font-size: 0.75rem;
+    }
+
+    /* ── Session summary modal ── */
+    .session-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: blur(6px);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .session-modal {
+      background: #14141d;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 460px;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .session-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .session-modal-header h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .btn-modal-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 18px;
+      padding: 4px;
+      line-height: 1;
+      transition: color var(--transition);
+    }
+
+    .btn-modal-close:hover { color: var(--text); }
+
+    .session-duration {
+      font-size: 3rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: #fff;
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .session-duration-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .session-activity-count {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .session-activity-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .session-activity-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 14px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 12px;
+    }
+
+    .session-activity-dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .session-activity-name {
+      flex: 1;
+      font-size: 0.88rem;
+      font-weight: 500;
+    }
+
+    .session-activity-time {
+      font-size: 0.88rem;
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .session-modal-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-session-export {
+      flex: 1;
+      background: #6c63ff;
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 11px;
+      transition: background var(--transition);
+    }
+
+    .btn-session-export:hover { background: #7c74ff; }
+
+    .btn-session-close {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 11px 20px;
+      transition: color var(--transition), border-color var(--transition);
+    }
+
+    .btn-session-close:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+    .btn-session-reset {
+      width: 100%;
+      background: none;
+      border: 1px solid rgba(255,100,100,0.2);
+      border-radius: 10px;
+      color: rgba(255,120,120,0.5);
+      cursor: pointer;
+      font-size: 0.8rem;
+      padding: 9px;
+      transition: background var(--transition), border-color var(--transition), color var(--transition);
+    }
+
+    .btn-session-reset:hover {
+      background: rgba(255,100,100,0.07);
+      border-color: rgba(255,100,100,0.45);
+      color: rgba(255,140,140,0.85);
+    }
+
+    /* ── Add tile — editing state ── */
+    .tile-add.editing {
+      opacity: 1 !important;
+      border-color: rgba(255,255,255,0.18) !important;
+      background: rgba(255,255,255,0.04) !important;
+      cursor: default;
+    }
+
+    .tile-add-form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .tile-add-form input {
+      width: 100%;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 0.9rem;
+      padding: 9px 12px;
+      outline: none;
+      text-align: center;
+      transition: border-color var(--transition);
+    }
+
+    .tile-add-form input:focus { border-color: rgba(255,255,255,0.35); }
+    .tile-add-form input::placeholder { color: rgba(255,255,255,0.3); }
+
+    .btn-add-confirm {
+      background: #6c63ff;
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 8px 20px;
+      transition: background var(--transition), transform var(--transition);
+      width: 100%;
+    }
+
+    .btn-add-confirm:hover { background: #7c74ff; }
+    .btn-add-confirm:active { transform: scale(0.97); }
+    .btn-add-confirm:disabled {
+      background: rgba(108,99,255,0.25);
+      color: rgba(255,255,255,0.3);
+      cursor: default;
+    }
+
+    .btn-export {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.8rem;
+      padding: 8px 14px;
+      transition: border-color var(--transition), color var(--transition);
+      white-space: nowrap;
+    }
+
+    .btn-export:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+    footer {
+      padding: 16px 32px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-privacy {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    /* ── Controls bar ── */
+    .controls-bar {
+      padding: 14px 32px 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .sort-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .sort-group span {
+      font-size: 0.75rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .btn-sort {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.75rem;
+      padding: 5px 12px;
+      transition: border-color var(--transition), color var(--transition), background var(--transition);
+      white-space: nowrap;
+    }
+
+    .btn-sort:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+    .btn-sort.active {
+      background: rgba(108,99,255,0.15);
+      border-color: #6c63ff;
+      color: #fff;
+    }
+
+    /* ── Grid ── */
+    main {
+      flex: 1;
+      padding: 28px 32px 40px;
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      min-height: 60vh;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .empty-state svg { opacity: 0.3; }
+    .empty-state p { font-size: 1rem; max-width: 260px; line-height: 1.5; }
+
+    .suggestions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 4px;
+    }
+
+    .suggestion-chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.82rem;
+      padding: 6px 16px;
+      transition: border-color var(--transition), color var(--transition), background var(--transition);
+    }
+
+    .suggestion-chip:hover {
+      border-color: rgba(255,255,255,0.2);
+      color: var(--text);
+      background: rgba(255,255,255,0.05);
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+
+    /* ── Tile ── */
+    .tile {
+      --color: #6c63ff;
+      position: relative;
+      border-radius: var(--radius);
+      background: color-mix(in srgb, var(--color) 18%, #0c0c14);
+      border: 1px solid color-mix(in srgb, var(--color) 35%, transparent);
+      padding: 28px 24px 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      transition: background var(--transition), box-shadow var(--transition);
+      user-select: none;
+      overflow: hidden;
+    }
+
+    .tile:hover { background: color-mix(in srgb, var(--color) 26%, #0c0c14); }
+
+    .tile.running {
+      background: color-mix(in srgb, var(--color) 32%, #0c0c14);
+      border-color: var(--color);
+      box-shadow: 0 0 0 1px var(--color), 0 12px 40px color-mix(in srgb, var(--color) 35%, transparent);
+    }
+
+    /* Pop animation on start */
+    @keyframes tile-pop {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.04); }
+      100% { transform: scale(1); }
+    }
+    .tile-popping {
+      animation: tile-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* accent bar */
+    .tile-accent {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: var(--color);
+      border-radius: var(--radius) var(--radius) 0 0;
+      opacity: 0.6;
+    }
+    .tile.running .tile-accent { opacity: 1; }
+
+    /* goal + delete buttons (top corners) */
+    .btn-delete, .btn-goal {
+      position: absolute;
+      top: 12px;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.35);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 6px;
+      line-height: 1;
+      transition: opacity var(--transition), color var(--transition);
+    }
+
+    .btn-delete { right: 12px; font-size: 16px; opacity: 0; }
+    .btn-goal   { left: 12px;  font-size: 13px; opacity: 1; line-height: 0; }
+
+    .tile:hover .btn-delete { opacity: 1; }
+    .btn-delete:hover, .btn-goal:hover { color: rgba(255,255,255,0.9); }
+
+    .tile-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-align: center;
+      color: rgba(255,255,255,0.9);
+      word-break: break-word;
+      max-width: 100%;
+    }
+
+    /* Timer */
+    .tile-timer {
+      font-size: 2.6rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .tile.running .tile-timer {
+      animation: pulse-text 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-text {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.75; }
+    }
+
+    /* Progress bar */
+    .tile-progress { width: 100%; position: relative; }
+
+    .tile-progress-track {
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.1);
+      overflow: hidden;
+    }
+
+    .tile-progress-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.75);
+      transition: width 1s linear;
+    }
+
+    .tile-progress-fill.complete { background: #ff6584; }
+
+    .tile-progress-label {
+      font-size: 0.68rem;
+      color: rgba(255,255,255,0.45);
+      margin-top: 5px;
+      text-align: center;
+    }
+
+    /* Play/pause button */
+    .btn-play {
+      position: relative;
+      width: 46px; height: 46px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.8);
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background var(--transition), border-color var(--transition), transform var(--transition);
+      flex-shrink: 0;
+    }
+
+    .btn-play:hover {
+      background: rgba(255,255,255,0.14);
+      border-color: rgba(255,255,255,0.45);
+    }
+
+    .btn-play:active { transform: scale(0.92); }
+
+    .tile.running .btn-play {
+      background: rgba(255,255,255,0.15);
+      border-color: rgba(255,255,255,0.6);
+    }
+
+    /* Status + sessions */
+    .tile-status {
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+    }
+
+    .tile.running .tile-status { color: rgba(255,255,255,0.85); }
+
+    .tile.running .tile-status::before {
+      content: '';
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.9);
+      margin-right: 6px;
+      vertical-align: middle;
+      animation: blink 1.2s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+
+    .tile-sessions {
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.38);
+    }
+
+    /* Reset button */
+    .btn-reset {
+      background: none;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px;
+      color: rgba(255,255,255,0.4);
+      cursor: pointer;
+      font-size: 0.72rem;
+      padding: 4px 10px;
+      transition: border-color var(--transition), color var(--transition);
+    }
+
+    .btn-reset:hover { border-color: rgba(255,255,255,0.35); color: rgba(255,255,255,0.9); }
+
+    /* ── Add tile ── */
+    .tile-add {
+      background: rgba(255,255,255,0.02) !important;
+      border: 1.5px dashed rgba(255,255,255,0.12) !important;
+      box-shadow: none !important;
+      opacity: 0.5;
+      justify-content: center;
+      min-height: 200px;
+      gap: 10px;
+      transition: opacity var(--transition), background var(--transition) !important;
+    }
+
+    .tile-add:hover {
+      opacity: 0.8 !important;
+      background: rgba(255,255,255,0.04) !important;
+    }
+
+    .tile-add-icon {
+      font-size: 2.2rem;
+      color: rgba(255,255,255,0.5);
+      line-height: 1;
+    }
+
+    .tile-add-label {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.5);
+      font-weight: 500;
+    }
+
+    /* ── Goal popover ── */
+    .goal-popover {
+      position: fixed;
+      background: #1e1e2e;
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 14px;
+      padding: 16px;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 210px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+    }
+
+    .goal-popover label {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .goal-popover input {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.9rem;
+      padding: 8px 10px;
+      outline: none;
+      width: 100%;
+      transition: border-color var(--transition);
+    }
+
+    .goal-popover input:focus { border-color: rgba(255,255,255,0.3); }
+    .goal-popover input[type=number]::-webkit-inner-spin-button,
+    .goal-popover input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .goal-popover input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+
+    .goal-popover-actions { display: flex; gap: 7px; }
+
+    .goal-popover-actions button {
+      flex: 1;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 7px 0;
+      transition: opacity var(--transition);
+    }
+
+    .goal-popover-actions button:hover { opacity: 0.85; }
+
+    .btn-goal-save  { background: #6c63ff; color: #fff; }
+    .btn-goal-clear { background: rgba(255,255,255,0.1); color: var(--muted); }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      header        { padding: 20px 16px 0; }
+      main          { padding: 20px 16px 32px; }
+      .controls-bar { padding: 12px 16px 0; }
+      .grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+      .tile-timer { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Time Tracker</h1>
+  <div class="header-right">
+    <div class="header-total" id="headerTotal"></div>
+    <button class="btn-end-session" id="btnEndSession">Fini pour aujourd'hui !</button>
+  </div>
+</header>
+
+<div class="controls-bar">
+  <div class="sort-group" id="sortBar">
+    <span>Trier :</span>
+    <button class="btn-sort active" data-sort="created">Création</button>
+    <button class="btn-sort" data-sort="name">Nom</button>
+    <button class="btn-sort" data-sort="elapsed">Temps</button>
+  </div>
+</div>
+
+<main>
+  <div class="empty-state" id="emptyState">
+    <svg width="56" height="56" viewBox="0 0 64 64" fill="none">
+      <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="2"/>
+      <path d="M32 18v14l8 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+    <p>Ajoutez une activité pour commencer à tracker votre temps.</p>
+    <div class="suggestions" id="suggestions">
+      <button class="suggestion-chip" data-suggest="Réunion">Réunion</button>
+      <button class="suggestion-chip" data-suggest="Email">Email</button>
+      <button class="suggestion-chip" data-suggest="Focus">Focus</button>
+      <button class="suggestion-chip" data-suggest="Dev">Dev</button>
+    </div>
+  </div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<footer>
+  <span class="footer-privacy">🔒 Aucune de vos données n'est collectée</span>
+  <button class="btn-export" id="btnExport" title="Exporter les données en CSV">↓ Exporter mes statistiques (CSV)</button>
+</footer>
+
+<script>
+  // ── Palette ──────────────────────────────────────────────────────────────
+  const COLORS = [
+    '#6c63ff','#ff6584','#43d9ad','#ffb347',
+    '#4fc3f7','#e879f9','#a3e635','#fb923c',
+    '#38bdf8','#f472b6','#34d399','#fbbf24',
+  ];
+
+  // ── State ────────────────────────────────────────────────────────────────
+  let activities = load();
+  let sortBy = localStorage.getItem('tt_sort') || 'created';
+  let sessionStart = null;
+  let sessionSnapshot = {}; // { id: elapsedAtSessionStart }
+  let tick = null;
+  let audioCtx = null;
+
+  // ── Chime (Web Audio API) ─────────────────────────────────────────────────
+  function playChime() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const ctx = audioCtx;
+      const now = ctx.currentTime;
+
+      function note(freq, start, duration, gainPeak) {
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(gainPeak, start + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+        osc.start(start);
+        osc.stop(start + duration);
+      }
+
+      // Doux arpège ascendant : E5 → A5 → C6
+      note(659,  now,       1.8, 0.22);
+      note(880,  now + 0.22, 1.6, 0.18);
+      note(1047, now + 0.42, 2.2, 0.13);
+    } catch (e) { /* silently ignore if audio unavailable */ }
+  }
+
+  // ── Day helpers ──────────────────────────────────────────────────────────
+  function todayKey() {
+    const d = new Date();
+    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  }
+
+  function load() {
+    try {
+      const data = JSON.parse(localStorage.getItem('tt_activities')) || [];
+      const savedDay = localStorage.getItem('tt_day');
+      const today = todayKey();
+      if (savedDay !== today) {
+        data.forEach(a => { a.todayElapsed = 0; });
+        localStorage.setItem('tt_day', today);
+      }
+      return data;
+    } catch { return []; }
+  }
+
+  function sorted() {
+    const list = [...activities];
+    if (sortBy === 'name')    return list.sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+    if (sortBy === 'elapsed') return list.sort((a, b) => b.elapsed - a.elapsed);
+    return list;
+  }
+
+  function save() {
+    localStorage.setItem('tt_activities', JSON.stringify(
+      activities.map(a => ({ ...a, running: false }))
+    ));
+  }
+
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+  // ── Ticker ───────────────────────────────────────────────────────────────
+  function startTick() {
+    if (tick) return;
+    tick = setInterval(() => {
+      let dirty = false;
+      let chimePending = false;
+      activities.forEach(a => {
+        if (a.running) {
+          a.elapsed++;
+          a.todayElapsed = (a.todayElapsed || 0) + 1;
+          dirty = true;
+          if (a.elapsed % 3600 === 0) chimePending = true;
+        }
+      });
+      if (chimePending) playChime();
+      if (dirty) {
+        if (localStorage.getItem('tt_day') !== todayKey()) {
+          activities.forEach(a => { a.todayElapsed = 0; });
+          localStorage.setItem('tt_day', todayKey());
+        }
+        renderTimers();
+        renderTotals();
+        save();
+      }
+    }, 1000);
+  }
+
+  function stopTick() {
+    const anyRunning = activities.some(a => a.running);
+    if (!anyRunning && tick) { clearInterval(tick); tick = null; }
+  }
+
+  // ── Format ───────────────────────────────────────────────────────────────
+  function fmt(secs) {
+    secs = Math.max(0, parseInt(secs, 10) || 0);
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    if (h > 0) return `${h}:${pad(m)}:${pad(s)}`;
+    return `${pad(m)}:${pad(s)}`;
+  }
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Progress bar HTML ─────────────────────────────────────────────────────
+  function progressHTML(a) {
+    if (!a.goal) return '';
+    const pct = Math.min(100, Math.round((a.elapsed / a.goal) * 100));
+    const complete = pct >= 100;
+    const label = complete
+      ? 'Objectif atteint !'
+      : `${fmt(Math.max(0, a.goal - a.elapsed))} restant`;
+    return `
+      <div class="tile-progress">
+        <div class="tile-progress-track">
+          <div class="tile-progress-fill${complete ? ' complete' : ''}" style="width:${pct}%"></div>
+        </div>
+        <div class="tile-progress-label">${label}</div>
+      </div>`;
+  }
+
+  // ── Render ───────────────────────────────────────────────────────────────
+  function render() {
+    const grid  = document.getElementById('grid');
+    const empty = document.getElementById('emptyState');
+
+    empty.style.display = activities.length ? 'none' : 'flex';
+    grid.innerHTML = '';
+
+    sorted().forEach(a => {
+      const tile = document.createElement('div');
+      tile.className = 'tile' + (a.running ? ' running' : '');
+      tile.style.setProperty('--color', a.color);
+      tile.dataset.id = a.id;
+
+      tile.innerHTML = `
+        <div class="tile-accent"></div>
+        <button class="btn-goal" title="Définir un objectif" data-goal="${a.id}"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="1.2" fill="currentColor"/></svg></button>
+        <button class="btn-delete" title="Supprimer" data-delete="${a.id}">✕</button>
+        <div class="tile-name">${escHtml(a.name)}</div>
+        <div class="tile-timer" data-timer="${a.id}">${fmt(a.elapsed)}</div>
+        ${progressHTML(a)}
+        <button class="btn-play" data-play="${a.id}">${a.running ? '⏸' : '▶'}</button>
+        <div class="tile-status">${a.running ? 'En cours' : 'Démarrer'}</div>
+        <div class="tile-sessions">${a.sessions} session${a.sessions !== 1 ? 's' : ''}</div>
+        <button class="btn-reset" data-reset="${a.id}">Remettre à zéro</button>
+      `;
+
+      tile.addEventListener('click', e => {
+        if (e.target.closest('[data-delete]') ||
+            e.target.closest('[data-reset]')  ||
+            e.target.closest('[data-play]')   ||
+            e.target.closest('[data-goal]')) return;
+        toggleActivity(a.id);
+      });
+
+      grid.appendChild(tile);
+    });
+
+    // Add tile (always last)
+    if (activities.length) {
+      const addTile = document.createElement('div');
+      addTile.className = 'tile tile-add';
+      addTile.innerHTML = `
+        <div class="tile-add-icon">+</div>
+        <div class="tile-add-label">Ajouter une activité</div>
+      `;
+      addTile.addEventListener('click', () => {
+        if (addTile.classList.contains('editing')) return;
+        addTile.classList.add('editing');
+        addTile.innerHTML = `
+          <div class="tile-add-form">
+            <input type="text" placeholder="Nom de l'activité…" maxlength="40" autocomplete="off" />
+            <button class="btn-add-confirm" disabled>+ Créer</button>
+          </div>
+        `;
+        const input  = addTile.querySelector('input');
+        const btnCfm = addTile.querySelector('.btn-add-confirm');
+        input.focus();
+
+        input.addEventListener('input', () => {
+          btnCfm.disabled = input.value.trim().length === 0;
+        });
+
+        function confirm() {
+          const val = input.value.trim();
+          if (val) addActivity(val);
+          else cancel();
+        }
+
+        function cancel() {
+          addTile.classList.remove('editing');
+          render();
+        }
+
+        btnCfm.addEventListener('click', confirm);
+
+        input.addEventListener('keydown', e => {
+          if (e.key === 'Enter')  confirm();
+          if (e.key === 'Escape') cancel();
+        });
+
+        setTimeout(() => {
+          document.addEventListener('click', function outside(e) {
+            if (!addTile.contains(e.target)) {
+              cancel();
+              document.removeEventListener('click', outside);
+            }
+          });
+        }, 0);
+      });
+      grid.appendChild(addTile);
+    }
+
+    // Event delegation
+    grid.querySelectorAll('[data-delete]').forEach(btn => {
+      btn.addEventListener('click', e => { e.stopPropagation(); deleteActivity(btn.dataset.delete); });
+    });
+
+    grid.querySelectorAll('[data-reset]').forEach(btn => {
+      btn.addEventListener('click', e => { e.stopPropagation(); resetActivity(btn.dataset.reset); });
+    });
+
+    grid.querySelectorAll('[data-play]').forEach(btn => {
+      btn.addEventListener('click', e => { e.stopPropagation(); toggleActivity(btn.dataset.play); });
+    });
+
+    grid.querySelectorAll('[data-goal]').forEach(btn => {
+      btn.addEventListener('click', e => { e.stopPropagation(); openGoalPopover(btn.dataset.goal, btn); });
+    });
+
+    renderTotals();
+  }
+
+  // ── Lightweight update (no DOM rebuild) ──────────────────────────────────
+  function renderTimers() {
+    activities.forEach(a => {
+      const timerEl = document.querySelector(`[data-timer="${a.id}"]`);
+      if (timerEl) timerEl.textContent = fmt(a.elapsed);
+
+      const tile = document.querySelector(`.tile[data-id="${a.id}"]`);
+      if (!tile) return;
+
+      tile.classList.toggle('running', a.running);
+
+      const status = tile.querySelector('.tile-status');
+      if (status) status.textContent = a.running ? 'En cours' : 'Démarrer';
+
+      const btnPlay = tile.querySelector('[data-play]');
+      if (btnPlay) btnPlay.textContent = a.running ? '⏸' : '▶';
+
+      // Progress bar update
+      const fill  = tile.querySelector('.tile-progress-fill');
+      const label = tile.querySelector('.tile-progress-label');
+      if (fill && a.goal) {
+        const pct = Math.min(100, Math.round((a.elapsed / a.goal) * 100));
+        fill.style.width = pct + '%';
+        fill.classList.toggle('complete', pct >= 100);
+        if (label) {
+          const remaining = Math.max(0, a.goal - a.elapsed);
+          label.textContent = pct >= 100 ? 'Objectif atteint !' : `${fmt(remaining)} restant`;
+        }
+      }
+    });
+  }
+
+  function renderTotals() {
+    const el = document.getElementById('headerTotal');
+    if (!el) return;
+    const sessionSecs = sessionStart ? Math.floor((Date.now() - sessionStart) / 1000) : 0;
+    const todayTotal  = activities.reduce((s, a) => s + (a.todayElapsed || 0), 0);
+    el.innerHTML =
+      `Session en cours : <strong>${fmt(sessionSecs)}</strong><br>` +
+      `Total aujourd'hui : <strong>${fmt(todayTotal)}</strong>`;
+
+    const btn = document.getElementById('btnEndSession');
+    if (btn) btn.classList.toggle('active', !!sessionStart);
+  }
+
+  // ── End session ──────────────────────────────────────────────────────────
+  function endSession() {
+    const duration = sessionStart ? Math.floor((Date.now() - sessionStart) / 1000) : 0;
+
+    const sessionItems = activities
+      .map(a => ({ ...a, sessionTime: a.elapsed - (sessionSnapshot[a.id] || 0) }))
+      .filter(a => a.sessionTime > 0)
+      .sort((a, b) => b.sessionTime - a.sessionTime);
+
+    // Stop all timers
+    activities.forEach(a => { a.running = false; });
+    stopTick();
+    sessionStart = null;
+    sessionSnapshot = {};
+    save();
+    renderTimers();
+    renderTotals();
+
+    showSessionModal(duration, sessionItems);
+  }
+
+  function showSessionModal(duration, items) {
+    const existing = document.getElementById('sessionBackdrop');
+    if (existing) existing.remove();
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'session-backdrop';
+    backdrop.id = 'sessionBackdrop';
+
+    const activitiesHTML = items.length
+      ? items.map(a => `
+          <div class="session-activity-item">
+            <div class="session-activity-dot" style="background:${a.color}"></div>
+            <div class="session-activity-name">${escHtml(a.name)}</div>
+            <div class="session-activity-time">${fmt(a.sessionTime)}</div>
+          </div>`).join('')
+      : `<p style="color:var(--muted);text-align:center;font-size:0.88rem;padding:8px 0">Aucune activité cette session.</p>`;
+
+    backdrop.innerHTML = `
+      <div class="session-modal">
+        <div class="session-modal-header">
+          <h2>Mes stats du jour</h2>
+          <button class="btn-modal-close" id="btnModalClose">✕</button>
+        </div>
+        <div>
+          <div class="session-duration-label">Durée totale</div>
+          <div class="session-duration">${fmt(duration)}</div>
+          <div class="session-activity-count">${items.length} activité${items.length !== 1 ? 's' : ''}</div>
+        </div>
+        <div class="session-activity-list">${activitiesHTML}</div>
+        <div class="session-modal-actions">
+          ${items.length ? '<button class="btn-session-export" id="btnSessionExport">↓ Exporter</button>' : ''}
+          <button class="btn-session-close" id="btnSessionClose">Fermer</button>
+        </div>
+        <button class="btn-session-reset" id="btnSessionReset">Réinitialiser toutes les activités</button>
+      </div>
+    `;
+
+    document.body.appendChild(backdrop);
+
+    function closeModal() { backdrop.remove(); }
+
+    document.getElementById('btnModalClose').addEventListener('click', closeModal);
+    document.getElementById('btnSessionClose').addEventListener('click', closeModal);
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
+
+    document.getElementById('btnSessionReset').addEventListener('click', () => {
+      activities.forEach(a => {
+        a.elapsed = 0;
+        a.todayElapsed = 0;
+        a.sessions = 0;
+        a.running = false;
+      });
+      stopTick();
+      save();
+      render();
+      closeModal();
+    });
+
+    if (items.length) {
+      document.getElementById('btnSessionExport').addEventListener('click', () => {
+        const date = new Date().toISOString().slice(0, 10);
+        const rows = [
+          ['Activité', 'Temps cette session', 'Temps total', 'Sessions'],
+          ...items.map(a => [
+            `"${a.name.replace(/"/g, '""')}"`,
+            fmtDuration(a.sessionTime),
+            fmtDuration(a.elapsed),
+            a.sessions,
+          ]),
+          ['', '', '', ''],
+          ['Durée session', fmtDuration(duration), '', ''],
+        ];
+        const csv = rows.map(r => r.join(';')).join('\r\n');
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `session-${date}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+    }
+  }
+
+  // ── Actions ──────────────────────────────────────────────────────────────
+  function addActivity(name) {
+    const colorIndex = activities.length % COLORS.length;
+    activities.push({
+      id: uid(),
+      name: name.trim(),
+      color: COLORS[colorIndex],
+      elapsed: 0,
+      todayElapsed: 0,
+      running: false,
+      sessions: 0,
+      goal: null,
+      createdAt: Date.now(),
+    });
+    save();
+    render();
+  }
+
+  function toggleActivity(id) {
+    const a = activities.find(x => x.id === id);
+    if (!a) return;
+
+    if (a.running) {
+      a.running = false;
+      stopTick();
+      if (!activities.some(x => x.running)) sessionStart = null;
+    } else {
+      if (!activities.some(x => x.running)) {
+        sessionStart = Date.now();
+        sessionSnapshot = {};
+        activities.forEach(x => { sessionSnapshot[x.id] = x.elapsed; });
+      }
+      a.running = true;
+      a.sessions++;
+      startTick();
+
+      // Pop animation
+      const tileEl = document.querySelector(`.tile[data-id="${id}"]`);
+      if (tileEl) {
+        tileEl.classList.remove('tile-popping');
+        void tileEl.offsetWidth; // reflow to restart animation
+        tileEl.classList.add('tile-popping');
+        tileEl.addEventListener('animationend', () => tileEl.classList.remove('tile-popping'), { once: true });
+      }
+    }
+
+    save();
+    renderTimers();
+  }
+
+  function deleteActivity(id) {
+    activities = activities.filter(a => a.id !== id);
+    stopTick();
+    save();
+    render();
+  }
+
+  function resetActivity(id) {
+    const a = activities.find(x => x.id === id);
+    if (!a) return;
+    a.elapsed = 0;
+    a.todayElapsed = 0;
+    a.sessions = 0;
+    a.running = false;
+    stopTick();
+    save();
+    render();
+  }
+
+  function setGoal(id, secs) {
+    const a = activities.find(x => x.id === id);
+    if (!a) return;
+    a.goal = secs || null;
+    save();
+    render();
+  }
+
+  // ── Goal popover ─────────────────────────────────────────────────────────
+  let goalPopover = null;
+
+  function openGoalPopover(id, btn) {
+    closeGoalPopover();
+    const a = activities.find(x => x.id === id);
+    if (!a) return;
+
+    const pop = document.createElement('div');
+    pop.className = 'goal-popover';
+    pop.innerHTML = `
+      <label>Objectif (en minutes)</label>
+      <input type="number" min="1" max="1440" placeholder="ex : 60" value="${a.goal ? Math.round(a.goal / 60) : ''}" />
+      <div class="goal-popover-actions">
+        <button class="btn-goal-save">Enregistrer</button>
+        <button class="btn-goal-clear">Retirer</button>
+      </div>
+    `;
+    document.body.appendChild(pop);
+    goalPopover = pop;
+
+    // Position below the ✎ button
+    const rect = btn.getBoundingClientRect();
+    pop.style.top  = (rect.bottom + 8 + window.scrollY) + 'px';
+    pop.style.left = rect.left + 'px';
+
+    // Keep inside viewport
+    requestAnimationFrame(() => {
+      const pr = pop.getBoundingClientRect();
+      if (pr.right > window.innerWidth - 8)
+        pop.style.left = (window.innerWidth - pr.width - 8) + 'px';
+    });
+
+    const input = pop.querySelector('input');
+    input.focus();
+    input.select();
+
+    pop.querySelector('.btn-goal-save').addEventListener('click', () => {
+      const val = parseInt(input.value, 10);
+      if (val > 0) setGoal(id, val * 60);
+      closeGoalPopover();
+    });
+
+    pop.querySelector('.btn-goal-clear').addEventListener('click', () => {
+      setGoal(id, null);
+      closeGoalPopover();
+    });
+
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter')  { pop.querySelector('.btn-goal-save').click(); }
+      if (e.key === 'Escape') { closeGoalPopover(); }
+    });
+
+    setTimeout(() => document.addEventListener('click', outsideClick), 0);
+  }
+
+  function outsideClick(e) {
+    if (goalPopover && !goalPopover.contains(e.target)) closeGoalPopover();
+  }
+
+  function closeGoalPopover() {
+    if (goalPopover) {
+      goalPopover.remove();
+      goalPopover = null;
+      document.removeEventListener('click', outsideClick);
+    }
+  }
+
+  document.getElementById('btnEndSession').addEventListener('click', endSession);
+
+  // ── Suggestions ──────────────────────────────────────────────────────────
+  document.getElementById('suggestions').addEventListener('click', e => {
+    const chip = e.target.closest('[data-suggest]');
+    if (!chip) return;
+    addActivity(chip.dataset.suggest);
+  });
+
+  // ── Sort ─────────────────────────────────────────────────────────────────
+  function updateSortButtons() {
+    document.querySelectorAll('.btn-sort').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.sort === sortBy);
+    });
+  }
+
+  document.getElementById('sortBar').addEventListener('click', e => {
+    const btn = e.target.closest('.btn-sort');
+    if (!btn) return;
+    sortBy = btn.dataset.sort;
+    localStorage.setItem('tt_sort', sortBy);
+    updateSortButtons();
+    render();
+  });
+
+  // ── Export CSV ───────────────────────────────────────────────────────────
+  function fmtDuration(secs) {
+    secs = Math.max(0, parseInt(secs, 10) || 0);
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    return `${pad(h)}:${pad(m)}:${pad(s)}`;
+  }
+
+  document.getElementById('btnExport').addEventListener('click', () => {
+    if (!activities.length) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const rows = [
+      ['Activité', 'Temps total', "Temps aujourd'hui", 'Sessions', 'Objectif', 'Créé le'],
+      ...activities.map(a => [
+        `"${a.name.replace(/"/g, '""')}"`,
+        fmtDuration(a.elapsed),
+        fmtDuration(a.todayElapsed || 0),
+        a.sessions,
+        a.goal ? fmtDuration(a.goal) : '',
+        a.createdAt ? new Date(a.createdAt).toLocaleDateString('fr-FR') : '',
+      ]),
+    ];
+    const csv = rows.map(r => r.join(';')).join('\r\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `time-tracker-${today}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // ── Init ─────────────────────────────────────────────────────────────────
+  updateSortButtons();
+  render();
+</script>
+</body>
+</html>
