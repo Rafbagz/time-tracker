@@ -711,7 +711,7 @@
 <body>
 
 <header>
-  <h1>Time Tracker</h1>
+  <h1>Tic-Task : time tracking</h1>
   <div class="header-right">
     <div class="header-total" id="headerTotal"></div>
     <button class="btn-end-session" id="btnEndSession">Fini pour aujourd'hui !</button>
@@ -897,7 +897,7 @@
     const grid  = document.getElementById('grid');
     const empty = document.getElementById('emptyState');
 
-    empty.style.display = activities.length ? 'none' : 'flex';
+    empty.style.display = 'none';
     grid.innerHTML = '';
 
     sorted().forEach(a => {
@@ -931,7 +931,7 @@
     });
 
     // Add tile (always last)
-    if (activities.length) {
+    {
       const addTile = document.createElement('div');
       addTile.className = 'tile tile-add';
       addTile.innerHTML = `
