@@ -388,10 +388,22 @@
 
     .suggestions {
       display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .suggestions-label {
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .suggestions-chips {
+      display: flex;
       gap: 8px;
       flex-wrap: wrap;
       justify-content: center;
-      margin-top: 4px;
     }
 
     .suggestion-chip {
@@ -720,12 +732,126 @@
     .btn-goal-clear { background: rgba(255,255,255,0.1); color: var(--muted); }
 
     /* ── Responsive ── */
+    /* ── FAB + bottom sheet ── */
+    .fab-add {
+      display: none;
+    }
+
+    .add-sheet-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 300;
+    }
+
+    .add-sheet {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #1e1e2e;
+      border-top: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px 20px 0 0;
+      padding: 12px 20px 40px;
+      z-index: 301;
+      transform: translateY(100%);
+      transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+
+    .add-sheet.open {
+      transform: translateY(0);
+    }
+
+    .add-sheet-handle {
+      width: 36px;
+      height: 4px;
+      background: rgba(255,255,255,0.18);
+      border-radius: 2px;
+      margin: 0 auto 16px;
+    }
+
+    .add-sheet-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 0 0 14px;
+      text-align: center;
+    }
+
+    .add-sheet-form {
+      display: flex;
+      gap: 10px;
+    }
+
+    .add-sheet-form input {
+      flex: 1;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 1rem;
+      padding: 12px 14px;
+      outline: none;
+    }
+
+    .add-sheet-form input:focus {
+      border-color: rgba(255,255,255,0.35);
+    }
+
+    .add-sheet-form input::placeholder {
+      color: rgba(255,255,255,0.3);
+    }
+
+    /* Masqué sur desktop, visible uniquement sur mobile */
+    .btn-export-mobile { display: none; }
+
     @media (max-width: 600px) {
-      header        { padding: 20px 16px 0; }
-      main          { padding: 20px 16px 32px; }
+      header        { padding: 20px 16px 0; align-items: flex-start; }
+      main          { padding: 20px 16px 100px; }
       .controls-bar { padding: 12px 16px 0; }
       .grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
       .tile-timer { font-size: 2rem; }
+
+      .header-right {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+      }
+
+      .btn-export-mobile { display: block; }
+      footer .btn-export  { display: none; }
+
+      .tile-add { display: none !important; }
+
+      .fab-add {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: fixed;
+        bottom: 28px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        font-size: 2rem;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(108,99,255,0.5);
+        z-index: 100;
+        transition: transform 0.15s, box-shadow 0.15s;
+      }
+
+      .fab-add:active {
+        transform: scale(0.93);
+        box-shadow: 0 2px 10px rgba(108,99,255,0.4);
+      }
+
+      .add-sheet-backdrop.open,
+      .add-sheet { display: block; }
     }
   </style>
 </head>
@@ -736,6 +862,7 @@
   <div class="header-right">
     <div class="header-total" id="headerTotal"></div>
     <button class="btn-end-session" id="btnEndSession">Fini pour aujourd'hui !</button>
+    <button class="btn-export btn-export-mobile" id="btnExportMobile" title="Exporter les données en CSV">↓ Exporter mes statistiques (CSV)</button>
   </div>
 </header>
 
@@ -751,12 +878,28 @@
 <main>
   <div class="grid" id="grid"></div>
   <div class="suggestions" id="suggestions" style="display:none">
-    <button class="suggestion-chip" data-suggest="Réunion">Réunion</button>
-    <button class="suggestion-chip" data-suggest="Email">Email</button>
-    <button class="suggestion-chip" data-suggest="Focus">Focus</button>
-    <button class="suggestion-chip" data-suggest="Dev">Dev</button>
+    <span class="suggestions-label">Par exemple :</span>
+    <div class="suggestions-chips">
+      <button class="suggestion-chip" data-suggest="Mails">Mails</button>
+      <button class="suggestion-chip" data-suggest="Sport">Sport</button>
+      <button class="suggestion-chip" data-suggest="Veille">Veille</button>
+    </div>
   </div>
 </main>
+
+<!-- FAB mobile -->
+<button class="fab-add" id="fabAdd" aria-label="Ajouter une activité">+</button>
+
+<!-- Bottom sheet mobile -->
+<div class="add-sheet-backdrop" id="addSheetBackdrop"></div>
+<div class="add-sheet" id="addSheet">
+  <div class="add-sheet-handle"></div>
+  <p class="add-sheet-title">Nouvelle activité</p>
+  <div class="add-sheet-form">
+    <input type="text" id="addSheetInput" placeholder="Nom de l'activité…" maxlength="40" autocomplete="off" />
+    <button class="btn-add-confirm" id="addSheetConfirm" disabled>+ Créer</button>
+  </div>
+</div>
 
 <footer>
   <span class="footer-privacy">🔒 Aucune de vos données n'est collectée</span>
@@ -1321,6 +1464,45 @@
 
   document.getElementById('btnEndSession').addEventListener('click', endSession);
 
+  // ── FAB / bottom sheet (mobile) ──────────────────────────────────────────
+  const fabAdd          = document.getElementById('fabAdd');
+  const addSheet        = document.getElementById('addSheet');
+  const addSheetBackdrop = document.getElementById('addSheetBackdrop');
+  const addSheetInput   = document.getElementById('addSheetInput');
+  const addSheetConfirm = document.getElementById('addSheetConfirm');
+
+  function openAddSheet() {
+    addSheetBackdrop.classList.add('open');
+    addSheet.classList.add('open');
+    addSheetInput.value = '';
+    addSheetConfirm.disabled = true;
+    setTimeout(() => addSheetInput.focus(), 50);
+  }
+
+  function closeAddSheet() {
+    addSheet.classList.remove('open');
+    addSheetBackdrop.classList.remove('open');
+  }
+
+  function confirmAddSheet() {
+    const val = addSheetInput.value.trim();
+    if (val) { addActivity(val); closeAddSheet(); }
+  }
+
+  fabAdd.addEventListener('click', openAddSheet);
+  addSheetBackdrop.addEventListener('click', closeAddSheet);
+
+  addSheetInput.addEventListener('input', () => {
+    addSheetConfirm.disabled = addSheetInput.value.trim().length === 0;
+  });
+
+  addSheetInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter')  confirmAddSheet();
+    if (e.key === 'Escape') closeAddSheet();
+  });
+
+  addSheetConfirm.addEventListener('click', confirmAddSheet);
+
   // ── Suggestions ──────────────────────────────────────────────────────────
   document.getElementById('suggestions').addEventListener('click', e => {
     const chip = e.target.closest('[data-suggest]');
@@ -1353,7 +1535,7 @@
     return `${pad(h)}:${pad(m)}:${pad(s)}`;
   }
 
-  document.getElementById('btnExport').addEventListener('click', () => {
+  function exportCSV() {
     if (!activities.length) return;
     const today = new Date().toISOString().slice(0, 10);
     const rows = [
@@ -1375,7 +1557,10 @@
     a.download = `time-tracker-${today}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  });
+  }
+
+  document.getElementById('btnExport').addEventListener('click', exportCSV);
+  document.getElementById('btnExportMobile').addEventListener('click', exportCSV);
 
   // ── Init ─────────────────────────────────────────────────────────────────
   updateSortButtons();
