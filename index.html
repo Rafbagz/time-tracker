@@ -29,11 +29,10 @@
     /* ── Header ── */
     header {
       padding: 28px 32px 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: end;
       gap: 16px;
-      flex-wrap: wrap;
     }
 
     header h1 {
@@ -42,12 +41,13 @@
       letter-spacing: -0.02em;
       white-space: nowrap;
       line-height: 1;
+      justify-self: start;
     }
 
     .header-right {
       display: flex;
-      align-items: flex-end;
-      gap: 20px;
+      align-items: center;
+      justify-content: flex-end;
     }
 
     .btn-end-session {
@@ -75,16 +75,21 @@
     }
 
     .header-total {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       color: var(--muted);
       font-variant-numeric: tabular-nums;
-      line-height: 1.6;
-      text-align: right;
+      line-height: 1.4;
+      text-align: center;
+      white-space: nowrap;
     }
 
     .header-total strong {
-      color: var(--text);
-      font-size: 0.75rem;
+      display: block;
+      color: rgba(240,240,245,0.4);
+      font-size: 1.9rem;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1;
     }
 
     /* ── Session summary modal ── */
@@ -125,19 +130,6 @@
       font-weight: 700;
       letter-spacing: -0.01em;
     }
-
-    .btn-modal-close {
-      background: none;
-      border: none;
-      color: var(--muted);
-      cursor: pointer;
-      font-size: 18px;
-      padding: 4px;
-      line-height: 1;
-      transition: color var(--transition);
-    }
-
-    .btn-modal-close:hover { color: var(--text); }
 
     .session-duration {
       font-size: 3rem;
@@ -329,6 +321,7 @@
       padding: 14px 32px 0;
       display: flex;
       align-items: center;
+      justify-content: flex-start;
       gap: 12px;
       flex-wrap: wrap;
     }
@@ -336,7 +329,7 @@
     .sort-group {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
       flex-shrink: 0;
     }
 
@@ -344,26 +337,26 @@
       font-size: 0.75rem;
       color: var(--muted);
       white-space: nowrap;
+      margin-right: 4px;
     }
 
     .btn-sort {
       background: none;
-      border: 1px solid var(--border);
-      border-radius: 8px;
+      border: none;
+      border-radius: 6px;
       color: var(--muted);
       cursor: pointer;
       font-size: 0.75rem;
-      padding: 5px 12px;
-      transition: border-color var(--transition), color var(--transition), background var(--transition);
+      padding: 5px 10px;
+      transition: color 0.15s, background 0.15s;
       white-space: nowrap;
     }
 
-    .btn-sort:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+    .btn-sort:hover { color: var(--text); background: rgba(255,255,255,0.06); }
 
     .btn-sort.active {
       background: rgba(108,99,255,0.15);
-      border-color: #6c63ff;
-      color: #fff;
+      color: #a09bff;
     }
 
     /* ── Grid ── */
@@ -731,12 +724,7 @@
     .btn-goal-save  { background: #6c63ff; color: #fff; }
     .btn-goal-clear { background: rgba(255,255,255,0.1); color: var(--muted); }
 
-    /* ── Responsive ── */
     /* ── FAB + bottom sheet ── */
-    .fab-add {
-      display: none;
-    }
-
     .add-sheet-backdrop {
       display: none;
       position: fixed;
@@ -745,8 +733,9 @@
       z-index: 300;
     }
 
+    .add-sheet-backdrop.open { display: block; }
+
     .add-sheet {
-      display: none;
       position: fixed;
       bottom: 0;
       left: 0;
@@ -764,6 +753,70 @@
       transform: translateY(0);
     }
 
+    /* ── Écran vide ── */
+    .empty-fullscreen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      cursor: pointer;
+      background-color: #0f0f13;
+      animation: bg-shift 10s ease-in-out infinite;
+      z-index: 50;
+      user-select: none;
+    }
+
+    @keyframes bg-shift {
+      0%   { background-color: #0f0f13; }
+      25%  { background-color: #100d20; }
+      50%  { background-color: #07131a; }
+      75%  { background-color: #160d0d; }
+      100% { background-color: #0f0f13; }
+    }
+
+    @keyframes text-shift {
+      0%   { color: rgba(255,255,255,0.32); }
+      25%  { color: rgba(190,170,255,0.55); }
+      50%  { color: rgba(140,215,235,0.55); }
+      75%  { color: rgba(255,175,155,0.55); }
+      100% { color: rgba(255,255,255,0.32); }
+    }
+
+    @keyframes plus-shift {
+      0%   { color: rgba(255,255,255,0.55); transform: scale(1);    opacity: 0.45; }
+      25%  { color: rgba(190,170,255,0.85); transform: scale(1.08); opacity: 0.9;  }
+      50%  { color: rgba(140,215,235,0.85); transform: scale(1);    opacity: 0.7;  }
+      75%  { color: rgba(255,175,155,0.85); transform: scale(1.05); opacity: 0.85; }
+      100% { color: rgba(255,255,255,0.55); transform: scale(1);    opacity: 0.45; }
+    }
+
+    .empty-fullscreen.visible { display: flex; }
+
+    .empty-tagline {
+      font-size: 0.85rem;
+      letter-spacing: 0.02em;
+      text-align: center;
+      animation: text-shift 10s ease-in-out infinite;
+    }
+
+    .empty-plus-icon {
+      font-size: 7rem;
+      font-weight: 200;
+      line-height: 1;
+      animation: plus-shift 10s ease-in-out infinite;
+    }
+
+    .empty-hint {
+      font-size: 0.8rem;
+      text-align: center;
+      max-width: 260px;
+      line-height: 1.6;
+      animation: text-shift 10s ease-in-out infinite;
+    }
+
     .add-sheet-handle {
       width: 36px;
       height: 4px;
@@ -773,85 +826,209 @@
     }
 
     .add-sheet-title {
-      font-size: 1rem;
+      font-size: 0.78rem;
       font-weight: 600;
-      color: var(--text);
-      margin: 0 0 14px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
       text-align: center;
+      margin: 0 0 20px;
     }
 
-    .add-sheet-form {
-      display: flex;
-      gap: 10px;
-    }
-
-    .add-sheet-form input {
-      flex: 1;
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.14);
-      border-radius: 10px;
-      color: var(--text);
-      font-size: 1rem;
-      padding: 12px 14px;
+    .add-sheet-input-big {
+      width: 100%;
+      background: none;
+      border: none;
+      border-bottom: 2px solid rgba(255,255,255,0.12);
+      color: #fff;
+      font-size: 1.7rem;
+      font-weight: 500;
+      padding: 8px 0 14px;
       outline: none;
+      text-align: center;
+      caret-color: #6c63ff;
+      letter-spacing: -0.02em;
+      transition: border-color 0.2s;
     }
 
-    .add-sheet-form input:focus {
-      border-color: rgba(255,255,255,0.35);
+    .add-sheet-input-big:focus { border-bottom-color: #6c63ff; }
+
+    .add-sheet-input-big::placeholder {
+      color: rgba(255,255,255,0.18);
+      font-weight: 300;
     }
 
-    .add-sheet-form input::placeholder {
-      color: rgba(255,255,255,0.3);
+    .add-sheet-quick {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      margin-top: 18px;
     }
+
+    .add-sheet-quick-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .add-sheet-quick-chip {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      color: rgba(255,255,255,0.45);
+      cursor: pointer;
+      font-size: 0.82rem;
+      padding: 7px 16px;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    .add-sheet-quick-chip:active {
+      background: rgba(108,99,255,0.25);
+      border-color: rgba(108,99,255,0.6);
+      color: #fff;
+    }
+
+    .btn-add-sheet-cta {
+      display: block;
+      width: 100%;
+      background: #6c63ff;
+      border: none;
+      border-radius: 16px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 1.05rem;
+      font-weight: 700;
+      padding: 19px;
+      margin-top: 24px;
+      letter-spacing: -0.01em;
+      transition: background 0.15s, transform 0.1s, opacity 0.15s;
+    }
+
+    .btn-add-sheet-cta:disabled {
+      background: rgba(108,99,255,0.18);
+      color: rgba(255,255,255,0.2);
+      cursor: default;
+    }
+
+    .btn-add-sheet-cta:not(:disabled):active { transform: scale(0.98); }
 
     /* Masqué sur desktop, visible uniquement sur mobile */
     .btn-export-mobile { display: none; }
 
+    /* ── Mobile sort inline (header) ── */
+    .mobile-sort-inline { display: none; }
+
+    /* ── Mobile bottom bar ── */
+    .mobile-bottom-bar {
+      display: none;
+    }
+
+    .btn-mobile-add {
+      flex: 1;
+      background: #6c63ff;
+      color: #fff;
+      border-radius: 14px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      line-height: 1;
+      padding: 16px;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+    .btn-mobile-add:active { transform: scale(0.96); opacity: 0.85; }
+
+    .btn-mobile-end {
+      flex: 1;
+      background: rgba(255,100,100,0.08);
+      border: 1px solid rgba(255,100,100,0.25);
+      color: rgba(255,140,140,0.75);
+      border-radius: 14px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 16px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .btn-mobile-end.active {
+      border-color: rgba(255,100,100,0.55);
+      color: rgba(255,140,140,0.95);
+      background: rgba(255,100,100,0.12);
+    }
+    .btn-mobile-end:active { background: rgba(255,100,100,0.18); }
+
     @media (max-width: 600px) {
-      header        { padding: 20px 16px 0; align-items: flex-start; }
-      main          { padding: 20px 16px 100px; }
-      .controls-bar { padding: 12px 16px 0; }
-      .grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
-      .tile-timer { font-size: 2rem; }
+      /* ── Layout ── */
+      header { display: flex; padding: 20px 16px 0; align-items: center; justify-content: space-between; gap: 12px; }
+      main { padding: 16px 12px 180px; }
+      footer { display: none; }
+      .controls-bar { display: none !important; }
+      header h1 { display: none; }
+      .header-right { display: none; }
+      .header-total { display: none; }
 
-      .header-right {
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 8px;
-      }
+      /* ── Header mobile : export à gauche, tri à droite ── */
+      .btn-export-mobile { order: 1; display: block; font-size: 0.75rem; padding: 8px 12px; flex-shrink: 0; }
+      .mobile-sort-inline { display: flex; gap: 4px; align-items: center; order: 3; flex-shrink: 0; }
+      .btn-sort { padding: 8px 14px; font-size: 0.78rem; }
 
-      .btn-export-mobile { display: block; }
-      footer .btn-export  { display: none; }
+      /* ── Grille ── */
+      .grid { grid-template-columns: 1fr; gap: 8px; }
 
+      /* ── Tuile base mobile ── */
+      .tile { gap: 6px; }
+      .tile-status { display: none; }
+      .btn-reset   { display: none; }
+      .btn-delete  { opacity: 1; }
+
+      /* ── Hero (activité en cours) ── */
+      .tile--hero { padding: 28px 24px 24px; gap: 12px; }
+      .tile--hero .tile-timer  { font-size: 3rem; }
+      .tile--hero .tile-status { display: block; }
+      .tile--hero .btn-play    { width: 56px; height: 56px; font-size: 1.2rem; }
+
+      /* ── Row (activités en attente) ── */
+      .tile--row { flex-direction: row; align-items: center; padding: 14px 16px 14px 20px; gap: 0; border-radius: 14px; }
+      .tile--row .tile-accent { top: 8px; bottom: 8px; left: 0; right: auto; width: 3px; height: auto; border-radius: 0 2px 2px 0; }
+      .tile--row .tile-name   { flex: 1; text-align: left; margin-left: 12px; }
+      .tile--row .tile-timer  { font-size: 1rem; color: rgba(255,255,255,0.45); margin-right: 10px; }
+      .tile--row .btn-play    { width: 36px; height: 36px; font-size: 0.82rem; flex-shrink: 0; }
+      .tile--row .btn-goal,
+      .tile--row .btn-delete,
+      .tile--row .tile-status,
+      .tile--row .tile-progress,
+      .tile--row .btn-reset   { display: none; }
+
+      /* ── Cacher la tuile add (remplacée par la barre mobile) ── */
       .tile-add { display: none !important; }
 
-      .fab-add {
+      /* ── Popover objectif : pleine largeur ── */
+      .goal-popover { width: calc(100vw - 32px); left: 16px !important; right: 16px; }
+
+      /* ── Cacher le bouton fin de session dans le header ── */
+      header .btn-end-session { display: none; }
+
+      /* ── Barre d'actions mobile ── */
+      .mobile-bottom-bar.visible {
         display: flex;
-        align-items: center;
-        justify-content: center;
+        flex-direction: column;
         position: fixed;
-        bottom: 28px;
-        right: 20px;
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background: var(--accent);
-        color: #fff;
-        font-size: 2rem;
-        border: none;
-        cursor: pointer;
-        box-shadow: 0 4px 20px rgba(108,99,255,0.5);
+        bottom: 0; left: 0; right: 0;
+        background: rgba(16,16,26,0.94);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border-top: 1px solid rgba(255,255,255,0.07);
+        padding: 12px 16px calc(20px + env(safe-area-inset-bottom));
+        gap: 10px;
         z-index: 100;
-        transition: transform 0.15s, box-shadow 0.15s;
       }
 
-      .fab-add:active {
-        transform: scale(0.93);
-        box-shadow: 0 2px 10px rgba(108,99,255,0.4);
-      }
-
-      .add-sheet-backdrop.open,
-      .add-sheet { display: block; }
+      .mobile-total { text-align: center; font-size: 0.68rem; color: var(--muted); font-variant-numeric: tabular-nums; line-height: 1.4; }
+      .mobile-total strong { display: block; color: rgba(240,240,245,0.4); font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+      .mobile-action-row { display: flex; gap: 10px; }
     }
   </style>
 </head>
@@ -859,10 +1036,15 @@
 
 <header>
   <h1>Tic-Task : time tracking</h1>
+  <div class="header-total" id="headerTotal"></div>
   <div class="header-right">
-    <div class="header-total" id="headerTotal"></div>
     <button class="btn-end-session" id="btnEndSession">Fini pour aujourd'hui !</button>
-    <button class="btn-export btn-export-mobile" id="btnExportMobile" title="Exporter les données en CSV">↓ Exporter mes statistiques (CSV)</button>
+  </div>
+  <button class="btn-export btn-export-mobile" id="btnExportMobile" title="Exporter les données en CSV">↓ Exporter mes statistiques (CSV)</button>
+  <div class="mobile-sort-inline" id="mobileSortInline">
+    <button class="btn-sort active" data-sort="created">Création</button>
+    <button class="btn-sort" data-sort="name">Nom</button>
+    <button class="btn-sort" data-sort="elapsed">Temps</button>
   </div>
 </header>
 
@@ -877,28 +1059,39 @@
 
 <main>
   <div class="grid" id="grid"></div>
-  <div class="suggestions" id="suggestions" style="display:none">
-    <span class="suggestions-label">Par exemple :</span>
-    <div class="suggestions-chips">
-      <button class="suggestion-chip" data-suggest="Mails">Mails</button>
-      <button class="suggestion-chip" data-suggest="Sport">Sport</button>
-      <button class="suggestion-chip" data-suggest="Veille">Veille</button>
-    </div>
-  </div>
 </main>
 
-<!-- FAB mobile -->
-<button class="fab-add" id="fabAdd" aria-label="Ajouter une activité">+</button>
+<!-- Dalle plein écran (état vide) -->
+<div class="empty-fullscreen" id="emptyFullscreen">
+  <p class="empty-tagline">Commencez par ajouter une activité</p>
+  <div class="empty-plus-icon">+</div>
+  <p class="empty-hint">Par exemple : mails, sport, apprentissage…</p>
+</div>
+
+<!-- Barre d'actions mobile -->
+<div class="mobile-bottom-bar" id="mobileBottomBar">
+  <div class="mobile-total" id="mobileTotal"></div>
+  <div class="mobile-action-row">
+    <button class="btn-mobile-add" id="btnMobileAdd">Ajouter une activité</button>
+    <button class="btn-mobile-end" id="btnMobileEnd">Fini pour aujourd'hui !</button>
+  </div>
+</div>
 
 <!-- Bottom sheet mobile -->
 <div class="add-sheet-backdrop" id="addSheetBackdrop"></div>
 <div class="add-sheet" id="addSheet">
   <div class="add-sheet-handle"></div>
   <p class="add-sheet-title">Nouvelle activité</p>
-  <div class="add-sheet-form">
-    <input type="text" id="addSheetInput" placeholder="Nom de l'activité…" maxlength="40" autocomplete="off" />
-    <button class="btn-add-confirm" id="addSheetConfirm" disabled>+ Créer</button>
+  <input type="text" id="addSheetInput" class="add-sheet-input-big" placeholder="Indiquez une activité" maxlength="40" autocomplete="off" />
+  <div class="add-sheet-quick">
+    <span class="add-sheet-quick-label">Par exemple :</span>
+    <button class="add-sheet-quick-chip" data-quick="Mails">Mails</button>
+    <button class="add-sheet-quick-chip" data-quick="Sport">Sport</button>
+    <button class="add-sheet-quick-chip" data-quick="Apprentissage">Apprentissage</button>
+    <button class="add-sheet-quick-chip" data-quick="Veille">Veille</button>
+    <button class="add-sheet-quick-chip" data-quick="Lecture">Lecture</button>
   </div>
+  <button class="btn-add-sheet-cta" id="addSheetConfirm" disabled>Créer l'activité →</button>
 </div>
 
 <footer>
@@ -1051,14 +1244,27 @@
 
   // ── Render ───────────────────────────────────────────────────────────────
   function render() {
-    const grid  = document.getElementById('grid');
-    const suggestions = document.getElementById('suggestions');
+    const grid = document.getElementById('grid');
 
     grid.innerHTML = '';
 
-    sorted().forEach(a => {
+    const isMobile = window.innerWidth <= 600;
+    let list = sorted();
+    if (isMobile) {
+      const running = list.filter(a => a.running);
+      const rest    = list.filter(a => !a.running);
+      list = [...running, ...rest];
+    }
+    const hasRunning = list.some(a => a.running);
+
+    list.forEach(a => {
       const tile = document.createElement('div');
-      tile.className = 'tile' + (a.running ? ' running' : '');
+      const isHero = isMobile && a.running && hasRunning;
+      const isRow  = isMobile && !a.running;
+      tile.className = 'tile'
+        + (a.running ? ' running' : '')
+        + (isHero ? ' tile--hero' : '')
+        + (isRow  ? ' tile--row'  : '');
       tile.style.setProperty('--color', a.color);
       tile.dataset.id = a.id;
 
@@ -1082,6 +1288,8 @@
             e.target.closest('[data-goal]')) return;
         toggleActivity(a.id);
       });
+
+      if (isRow) attachSwipeDelete(tile, a.id);
 
       grid.appendChild(tile);
     });
@@ -1147,8 +1355,18 @@
 
     const isEmpty = activities.length === 0;
     grid.classList.toggle('grid--empty', isEmpty);
-    suggestions.style.display = isEmpty ? 'flex' : 'none';
     document.querySelector('main').classList.toggle('main--empty', isEmpty);
+
+    // Basculer entre état vide (dalle) et état normal
+    document.getElementById('emptyFullscreen').classList.toggle('visible', isEmpty);
+    document.querySelector('header').style.display         = isEmpty ? 'none' : '';
+    document.querySelector('.controls-bar').style.display  = isEmpty ? 'none' : '';
+    document.querySelector('main').style.display           = isEmpty ? 'none' : '';
+    document.querySelector('footer').style.display         = isEmpty ? 'none' : '';
+    document.getElementById('mobileBottomBar').classList.toggle('visible', !isEmpty);
+
+    const mobileEndBtn = document.getElementById('btnMobileEnd');
+    if (mobileEndBtn) mobileEndBtn.classList.toggle('active', !!sessionStart);
 
     // Event delegation
     grid.querySelectorAll('[data-delete]').forEach(btn => {
@@ -1203,10 +1421,14 @@
   }
 
   function renderTotals() {
-    const el = document.getElementById('headerTotal');
-    if (!el) return;
     const todayTotal = activities.reduce((s, a) => s + (a.todayElapsed || 0), 0);
-    el.innerHTML = `Total aujourd'hui : <strong>${fmt(todayTotal)}</strong>`;
+    const totalHTML = `Total aujourd'hui<strong>${fmt(todayTotal)}</strong>`;
+
+    const el = document.getElementById('headerTotal');
+    if (el) el.innerHTML = totalHTML;
+
+    const mobileEl = document.getElementById('mobileTotal');
+    if (mobileEl) mobileEl.innerHTML = totalHTML;
 
     const btn = document.getElementById('btnEndSession');
     if (btn) btn.classList.toggle('active', !!sessionStart);
@@ -1254,7 +1476,6 @@
       <div class="session-modal">
         <div class="session-modal-header">
           <h2>Mes stats du jour</h2>
-          <button class="btn-modal-close" id="btnModalClose">✕</button>
         </div>
         <div>
           <div class="session-duration-label">Durée totale</div>
@@ -1274,7 +1495,6 @@
 
     function closeModal() { backdrop.remove(); }
 
-    document.getElementById('btnModalClose').addEventListener('click', closeModal);
     document.getElementById('btnSessionClose').addEventListener('click', closeModal);
     backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
 
@@ -1374,6 +1594,42 @@
     render();
   }
 
+  function attachSwipeDelete(el, id) {
+    let startX = 0, startY = 0, swiping = false;
+    el.addEventListener('touchstart', e => {
+      startX  = e.touches[0].clientX;
+      startY  = e.touches[0].clientY;
+      swiping = false;
+      el.style.transition = 'none';
+    }, { passive: true });
+
+    el.addEventListener('touchmove', e => {
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+      if (!swiping && Math.abs(dy) > Math.abs(dx)) return;
+      swiping = true;
+      if (dx < 0) {
+        e.preventDefault();
+        el.style.transform = `translateX(${dx}px)`;
+        el.style.opacity   = String(Math.max(0.25, 1 + dx / 160));
+      }
+    }, { passive: false });
+
+    el.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - startX;
+      if (swiping && dx < -80) {
+        el.style.transition = 'transform 0.22s ease, opacity 0.22s ease';
+        el.style.transform  = 'translateX(-110%)';
+        el.style.opacity    = '0';
+        setTimeout(() => deleteActivity(id), 230);
+      } else {
+        el.style.transition = 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s';
+        el.style.transform  = '';
+        el.style.opacity    = '';
+      }
+    });
+  }
+
   function resetActivity(id) {
     const a = activities.find(x => x.id === id);
     if (!a) return;
@@ -1465,7 +1721,6 @@
   document.getElementById('btnEndSession').addEventListener('click', endSession);
 
   // ── FAB / bottom sheet (mobile) ──────────────────────────────────────────
-  const fabAdd          = document.getElementById('fabAdd');
   const addSheet        = document.getElementById('addSheet');
   const addSheetBackdrop = document.getElementById('addSheetBackdrop');
   const addSheetInput   = document.getElementById('addSheetInput');
@@ -1489,7 +1744,6 @@
     if (val) { addActivity(val); closeAddSheet(); }
   }
 
-  fabAdd.addEventListener('click', openAddSheet);
   addSheetBackdrop.addEventListener('click', closeAddSheet);
 
   addSheetInput.addEventListener('input', () => {
@@ -1503,12 +1757,15 @@
 
   addSheetConfirm.addEventListener('click', confirmAddSheet);
 
-  // ── Suggestions ──────────────────────────────────────────────────────────
-  document.getElementById('suggestions').addEventListener('click', e => {
-    const chip = e.target.closest('[data-suggest]');
+  document.getElementById('addSheet').addEventListener('click', e => {
+    const chip = e.target.closest('[data-quick]');
     if (!chip) return;
-    addActivity(chip.dataset.suggest);
+    addActivity(chip.dataset.quick);
+    closeAddSheet();
   });
+
+  // ── Dalle vide ───────────────────────────────────────────────────────────
+  document.getElementById('emptyFullscreen').addEventListener('click', openAddSheet);
 
   // ── Sort ─────────────────────────────────────────────────────────────────
   function updateSortButtons() {
@@ -1517,14 +1774,20 @@
     });
   }
 
-  document.getElementById('sortBar').addEventListener('click', e => {
+  function handleSortClick(e) {
     const btn = e.target.closest('.btn-sort');
     if (!btn) return;
     sortBy = btn.dataset.sort;
     localStorage.setItem('tt_sort', sortBy);
     updateSortButtons();
     render();
-  });
+  }
+
+  document.getElementById('sortBar').addEventListener('click', handleSortClick);
+  document.getElementById('mobileSortInline').addEventListener('click', handleSortClick);
+
+  document.getElementById('btnMobileAdd').addEventListener('click', openAddSheet);
+  document.getElementById('btnMobileEnd').addEventListener('click', endSession);
 
   // ── Export CSV ───────────────────────────────────────────────────────────
   function fmtDuration(secs) {
