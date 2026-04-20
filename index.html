@@ -1319,11 +1319,11 @@
         <div class="tile-name">${escHtml(a.name)}</div>
         <div class="tile-timer" data-timer="${a.id}">${fmt(a.elapsed)}</div>
         ${progressHTML(a)}
-        <button class="btn-play" data-play="${a.id}">${a.running ? '⏸' : '▶'}</button>
+        <button class="btn-play" data-play="${a.id}">${a.running ? '❙❙' : '⏵'}</button>
         <div class="tile-status">${a.running ? 'En cours' : 'Démarrer'}</div>
 
         <button class="btn-reset" data-reset="${a.id}">Remettre à zéro</button>
-        ${isRow && !a.running ? '<span class="drag-handle">⠿</span>' : ''}
+        ${isRow && !a.running ? '<span class="drag-handle">⋮⋮</span>' : ''}
       `;
 
       tile.addEventListener('click', e => {
@@ -1336,7 +1336,7 @@
       });
 
       if (isRow) attachSwipeDelete(tile, a.id);
-      if (isRow && !a.running) attachDragReorder(tile, a.id);
+      if (isRow) attachDragReorder(tile, a.id);
 
       grid.appendChild(tile);
     });
