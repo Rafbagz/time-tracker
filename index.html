@@ -1882,8 +1882,10 @@
   }
 
   function closeAddSheet() {
+    addSheetInput.blur();
     addSheet.classList.remove('open');
     addSheetBackdrop.classList.remove('open');
+    window.scrollTo(0, 0);
   }
 
   function confirmAddSheet() {
