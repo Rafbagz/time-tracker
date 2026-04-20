@@ -1277,15 +1277,11 @@
       const rest    = list.filter(a => !a.running);
       list = [...running, ...rest];
     }
-    const hasRunning = list.some(a => a.running);
-
     list.forEach(a => {
       const tile = document.createElement('div');
-      const isHero = isMobile && a.running && hasRunning;
-      const isRow  = isMobile && !a.running;
+      const isRow = isMobile;
       tile.className = 'tile'
         + (a.running ? ' running' : '')
-        + (isHero ? ' tile--hero' : '')
         + (isRow  ? ' tile--row'  : '');
       tile.style.setProperty('--color', a.color);
       tile.dataset.id = a.id;
