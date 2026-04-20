@@ -1319,7 +1319,7 @@
         <div class="tile-name">${escHtml(a.name)}</div>
         <div class="tile-timer" data-timer="${a.id}">${fmt(a.elapsed)}</div>
         ${progressHTML(a)}
-        <button class="btn-play" data-play="${a.id}">${isRow ? (a.running ? '❙ ❙' : '▶') : (a.running ? '❙❙' : '⏵')}</button>
+        <button class="btn-play" data-play="${a.id}">${isRow ? (a.running ? '<svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor"><rect x="3" y="3" width="4" height="12" rx="1"/><rect x="11" y="3" width="4" height="12" rx="1"/></svg>' : '<svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor"><path d="M4 2L14 9L4 16V2Z"/></svg>') : (a.running ? '❙❙' : '⏵')}</button>
         <div class="tile-status">${a.running ? 'En cours' : 'Démarrer'}</div>
 
         <button class="btn-reset" data-reset="${a.id}">Remettre à zéro</button>
@@ -1451,7 +1451,11 @@
       const btnPlay = tile.querySelector('[data-play]');
       if (btnPlay) {
         const isMobile = window.innerWidth <= 600;
-        btnPlay.textContent = isMobile ? (a.running ? '❙ ❙' : '▶') : (a.running ? '❙❙' : '⏵');
+        if (isMobile) {
+          btnPlay.innerHTML = a.running ? '<svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor"><rect x="3" y="3" width="4" height="12" rx="1"/><rect x="11" y="3" width="4" height="12" rx="1"/></svg>' : '<svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor"><path d="M4 2L14 9L4 16V2Z"/></svg>';
+        } else {
+          btnPlay.textContent = a.running ? '❙❙' : '⏵';
+        }
       }
 
       // Progress bar update
