@@ -1155,9 +1155,20 @@
       const savedDay = localStorage.getItem('tt_day');
       const today = todayKey();
       if (savedDay !== today) {
-        data.forEach(a => { a.todayElapsed = 0; });
+        data.forEach(a => { a.todayElapsed = 0; a.baseTodayElapsed = 0; });
         localStorage.setItem('tt_day', today);
       }
+      // Si une activité tournait quand la page a été fermée/rechargée, rattraper le temps
+      data.forEach(a => {
+        if (a.running && a.startedAt) {
+          const delta = Math.floor((Date.now() - a.startedAt) / 1000);
+          a.elapsed = (a.baseElapsed || 0) + delta;
+          a.todayElapsed = (a.baseTodayElapsed || 0) + delta;
+          a.baseElapsed = a.elapsed;
+          a.baseTodayElapsed = a.todayElapsed;
+          a.startedAt = Date.now();
+        }
+      });
       return data;
     } catch { return []; }
   }
@@ -1170,9 +1181,7 @@
   }
 
   function save() {
-    localStorage.setItem('tt_activities', JSON.stringify(
-      activities.map(a => ({ ...a, running: false }))
-    ));
+    localStorage.setItem('tt_activities', JSON.stringify(activities));
   }
 
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
@@ -1797,6 +1806,7 @@
   });
 
   // ── Dalle vide ───────────────────────────────────────────────────────────
+  document.getElementById('emptyFullscreen').addEventListener('touchend', (e) => { e.preventDefault(); openAddSheet(); }, { passive: false });
   document.getElementById('emptyFullscreen').addEventListener('click', openAddSheet);
 
   // ── Sort ─────────────────────────────────────────────────────────────────
@@ -1818,6 +1828,7 @@
   document.getElementById('sortBar').addEventListener('click', handleSortClick);
   document.getElementById('mobileSortInline').addEventListener('click', handleSortClick);
 
+  document.getElementById('btnMobileAdd').addEventListener('touchend', (e) => { e.preventDefault(); openAddSheet(); }, { passive: false });
   document.getElementById('btnMobileAdd').addEventListener('click', openAddSheet);
   document.getElementById('btnMobileEnd').addEventListener('click', endSession);
 
@@ -1860,6 +1871,7 @@
   // ── Init ─────────────────────────────────────────────────────────────────
   updateSortButtons();
   render();
+  if (activities.some(a => a.running)) startTick();
 </script>
 </body>
 </html>
