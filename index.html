@@ -921,6 +921,21 @@
     /* ── Mobile sort inline (header) ── */
     .mobile-sort-inline { display: none; }
 
+    /* ── Drag handle ── */
+    .drag-handle {
+      display: none;
+      color: rgba(255,255,255,0.2);
+      font-size: 1.2rem;
+      padding: 4px 2px;
+      flex-shrink: 0;
+      touch-action: none;
+      line-height: 1;
+      user-select: none;
+      cursor: grab;
+    }
+    .tile--row .drag-handle { display: block; }
+    .tile--dragging { opacity: 0.75; box-shadow: 0 12px 32px rgba(0,0,0,0.5) !important; position: relative; z-index: 10; }
+
     /* ── Mobile bottom bar ── */
     .mobile-bottom-bar {
       display: none;
@@ -970,10 +985,8 @@
       .header-right { display: none; }
       .header-total { display: none; }
 
-      /* ── Header mobile : export à gauche, tri à droite ── */
+      /* ── Header mobile : export uniquement ── */
       .btn-export-mobile { order: 1; display: block; font-size: 0.75rem; padding: 8px 12px; flex-shrink: 0; }
-      .mobile-sort-inline { display: flex; gap: 4px; align-items: center; order: 3; flex-shrink: 0; }
-      .btn-sort { padding: 8px 14px; font-size: 0.78rem; }
 
       /* ── Grille ── */
       .grid { grid-template-columns: 1fr; gap: 8px; }
@@ -1109,6 +1122,8 @@
 
   // ── State ────────────────────────────────────────────────────────────────
   let activities = load();
+  let archivedActivities = loadArchive();
+  let sessionDeletedItems = [];
   let sortBy = localStorage.getItem('tt_sort') || 'created';
   let sessionStart = null;
   let sessionSnapshot = {}; // { id: elapsedAtSessionStart }
@@ -1182,6 +1197,15 @@
 
   function save() {
     localStorage.setItem('tt_activities', JSON.stringify(activities));
+  }
+
+  function loadArchive() {
+    try { return JSON.parse(localStorage.getItem('tt_archive')) || []; }
+    catch { return []; }
+  }
+
+  function saveArchive() {
+    localStorage.setItem('tt_archive', JSON.stringify(archivedActivities));
   }
 
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
@@ -1271,18 +1295,20 @@
     grid.innerHTML = '';
 
     const isMobile = window.innerWidth <= 600;
-    let list = sorted();
+    let list;
     if (isMobile) {
-      const running = list.filter(a => a.running);
-      const rest    = list.filter(a => !a.running);
+      const running = activities.filter(a => a.running);
+      const rest    = activities.filter(a => !a.running);
       list = [...running, ...rest];
+    } else {
+      list = sorted();
     }
     list.forEach(a => {
       const tile = document.createElement('div');
       const isRow = isMobile;
       tile.className = 'tile'
         + (a.running ? ' running' : '')
-        + (isRow  ? ' tile--row'  : '');
+        + (isRow ? ' tile--row' : '');
       tile.style.setProperty('--color', a.color);
       tile.dataset.id = a.id;
 
@@ -1297,17 +1323,20 @@
         <div class="tile-status">${a.running ? 'En cours' : 'Démarrer'}</div>
 
         <button class="btn-reset" data-reset="${a.id}">Remettre à zéro</button>
+        ${isRow && !a.running ? '<span class="drag-handle">⠿</span>' : ''}
       `;
 
       tile.addEventListener('click', e => {
         if (e.target.closest('[data-delete]') ||
             e.target.closest('[data-reset]')  ||
             e.target.closest('[data-play]')   ||
-            e.target.closest('[data-goal]')) return;
+            e.target.closest('[data-goal]')   ||
+            e.target.closest('.drag-handle')) return;
         toggleActivity(a.id);
       });
 
       if (isRow) attachSwipeDelete(tile, a.id);
+      if (isRow && !a.running) attachDragReorder(tile, a.id);
 
       grid.appendChild(tile);
     });
@@ -1463,9 +1492,10 @@
       }
     });
 
-    const sessionItems = activities
+    const liveItems = activities
       .map(a => ({ ...a, sessionTime: a.elapsed - (sessionSnapshot[a.id] || 0) }))
-      .filter(a => a.sessionTime > 0)
+      .filter(a => a.sessionTime > 0);
+    const sessionItems = [...liveItems, ...sessionDeletedItems]
       .sort((a, b) => b.sessionTime - a.sessionTime);
 
     const duration = sessionItems.reduce((s, a) => s + a.sessionTime, 0);
@@ -1475,6 +1505,7 @@
     stopTick();
     sessionStart = null;
     sessionSnapshot = {};
+    sessionDeletedItems = [];
     save();
     renderTimers();
     renderTotals();
@@ -1527,11 +1558,12 @@
 
     document.getElementById('btnSessionReset').addEventListener('click', () => {
       activities.forEach(a => {
-        a.elapsed = 0;
-        a.todayElapsed = 0;
-        a.sessions = 0;
-        a.running = false;
+        a.elapsed = 0; a.todayElapsed = 0; a.sessions = 0;
+        a.running = false; a.startedAt = null;
       });
+      archivedActivities = [];
+      sessionDeletedItems = [];
+      saveArchive();
       stopTick();
       save();
       render();
@@ -1624,7 +1656,22 @@
   }
 
   function deleteActivity(id) {
-    activities = activities.filter(a => a.id !== id);
+    const a = activities.find(x => x.id === id);
+    if (a) {
+      if (a.running && a.startedAt) {
+        const delta = Math.floor((Date.now() - a.startedAt) / 1000);
+        a.elapsed = a.baseElapsed + delta;
+        a.todayElapsed = a.baseTodayElapsed + delta;
+        a.startedAt = null;
+      }
+      const sessionTime = a.elapsed - (sessionSnapshot[a.id] || 0);
+      if (sessionTime > 0) sessionDeletedItems.push({ ...a, sessionTime, running: false });
+      const archIdx = archivedActivities.findIndex(x => x.id === a.id);
+      if (archIdx >= 0) archivedActivities[archIdx] = { ...a, running: false };
+      else archivedActivities.push({ ...a, running: false });
+      saveArchive();
+    }
+    activities = activities.filter(x => x.id !== id);
     stopTick();
     save();
     render();
@@ -1633,6 +1680,7 @@
   function attachSwipeDelete(el, id) {
     let startX = 0, startY = 0, swiping = false;
     el.addEventListener('touchstart', e => {
+      if (e.target.closest('.drag-handle')) return;
       startX  = e.touches[0].clientX;
       startY  = e.touches[0].clientY;
       swiping = false;
@@ -1663,6 +1711,65 @@
         el.style.transform  = '';
         el.style.opacity    = '';
       }
+    });
+  }
+
+  function attachDragReorder(el, id) {
+    const handle = el.querySelector('.drag-handle');
+    if (!handle) return;
+    let startY = 0, isDragging = false;
+
+    handle.addEventListener('touchstart', e => {
+      e.stopPropagation();
+      startY = e.touches[0].clientY;
+      isDragging = true;
+      el.style.transition = 'none';
+      el.classList.add('tile--dragging');
+    }, { passive: true });
+
+    handle.addEventListener('touchmove', e => {
+      if (!isDragging) return;
+      e.preventDefault();
+      el.style.transform = `translateY(${e.touches[0].clientY - startY}px)`;
+    }, { passive: false });
+
+    handle.addEventListener('touchend', e => {
+      if (!isDragging) return;
+      isDragging = false;
+      el.classList.remove('tile--dragging');
+      el.style.transition = 'transform 0.2s ease';
+      el.style.transform = '';
+      setTimeout(() => { el.style.transition = ''; }, 200);
+
+      const dropY = e.changedTouches[0].clientY;
+      const grid = document.getElementById('grid');
+      const tiles = [...grid.querySelectorAll('.tile[data-id]')];
+      const tileIds = tiles.map(t => t.dataset.id);
+      const currentRenderIdx = tileIds.indexOf(id);
+
+      let targetRenderIdx = tileIds.length;
+      for (let i = 0; i < tiles.length; i++) {
+        if (tiles[i].dataset.id === id) continue;
+        const rect = tiles[i].getBoundingClientRect();
+        if (dropY < rect.top + rect.height / 2) { targetRenderIdx = i; break; }
+      }
+
+      if (targetRenderIdx === currentRenderIdx || targetRenderIdx === currentRenderIdx + 1) return;
+
+      const newOrder = [...tileIds];
+      newOrder.splice(currentRenderIdx, 1);
+      const adj = targetRenderIdx > currentRenderIdx ? targetRenderIdx - 1 : targetRenderIdx;
+      newOrder.splice(adj, 0, id);
+
+      activities.sort((a, b) => {
+        const ai = newOrder.indexOf(a.id), bi = newOrder.indexOf(b.id);
+        if (ai === -1 && bi === -1) return 0;
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+      });
+      save();
+      render();
     });
   }
 
@@ -1838,11 +1945,13 @@
   }
 
   function exportCSV() {
-    if (!activities.length) return;
+    const deleted = archivedActivities.filter(a => !activities.find(x => x.id === a.id));
+    const allActivities = [...activities, ...deleted];
+    if (!allActivities.length) return;
     const today = new Date().toISOString().slice(0, 10);
     const rows = [
       ['Activité', 'Temps total', "Temps aujourd'hui", 'Sessions', 'Objectif', 'Créé le'],
-      ...activities.map(a => [
+      ...allActivities.map(a => [
         `"${a.name.replace(/"/g, '""')}"`,
         fmtDuration(a.elapsed),
         fmtDuration(a.todayElapsed || 0),
