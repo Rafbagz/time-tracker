@@ -1184,17 +1184,30 @@
       let dirty = false;
       let chimePending = false;
       activities.forEach(a => {
-        if (a.running) {
-          a.elapsed++;
-          a.todayElapsed = (a.todayElapsed || 0) + 1;
+        if (a.running && a.startedAt) {
+          const delta = Math.floor((Date.now() - a.startedAt) / 1000);
+          const prevElapsed = a.elapsed;
+          a.elapsed = a.baseElapsed + delta;
+          a.todayElapsed = a.baseTodayElapsed + delta;
+          if (Math.floor(a.elapsed / 3600) > Math.floor(prevElapsed / 3600)) chimePending = true;
           dirty = true;
-          if (a.elapsed % 3600 === 0) chimePending = true;
         }
       });
       if (chimePending) playChime();
       if (dirty) {
         if (localStorage.getItem('tt_day') !== todayKey()) {
-          activities.forEach(a => { a.todayElapsed = 0; });
+          activities.forEach(a => {
+            if (a.running && a.startedAt) {
+              const delta = Math.floor((Date.now() - a.startedAt) / 1000);
+              a.elapsed = a.baseElapsed + delta;
+              a.baseElapsed = a.elapsed;
+              a.todayElapsed = 0;
+              a.baseTodayElapsed = 0;
+              a.startedAt = Date.now();
+            } else {
+              a.todayElapsed = 0;
+            }
+          });
           localStorage.setItem('tt_day', todayKey());
         }
         renderTimers();
@@ -1436,6 +1449,15 @@
 
   // ── End session ──────────────────────────────────────────────────────────
   function endSession() {
+    activities.forEach(a => {
+      if (a.running && a.startedAt) {
+        const delta = Math.floor((Date.now() - a.startedAt) / 1000);
+        a.elapsed = a.baseElapsed + delta;
+        a.todayElapsed = a.baseTodayElapsed + delta;
+        a.startedAt = null;
+      }
+    });
+
     const sessionItems = activities
       .map(a => ({ ...a, sessionTime: a.elapsed - (sessionSnapshot[a.id] || 0) }))
       .filter(a => a.sessionTime > 0)
@@ -1560,6 +1582,12 @@
     if (!a) return;
 
     if (a.running) {
+      if (a.startedAt) {
+        const delta = Math.floor((Date.now() - a.startedAt) / 1000);
+        a.elapsed = a.baseElapsed + delta;
+        a.todayElapsed = a.baseTodayElapsed + delta;
+        a.startedAt = null;
+      }
       a.running = false;
       stopTick();
       if (!activities.some(x => x.running)) sessionStart = null;
@@ -1570,6 +1598,9 @@
         activities.forEach(x => { sessionSnapshot[x.id] = x.elapsed; });
       }
       a.running = true;
+      a.startedAt = Date.now();
+      a.baseElapsed = a.elapsed;
+      a.baseTodayElapsed = a.todayElapsed || 0;
       a.sessions++;
       startTick();
 
@@ -1584,7 +1615,7 @@
     }
 
     save();
-    renderTimers();
+    render();
   }
 
   function deleteActivity(id) {
@@ -1637,6 +1668,7 @@
     a.todayElapsed = 0;
     a.sessions = 0;
     a.running = false;
+    a.startedAt = null;
     stopTick();
     save();
     render();
