@@ -1319,9 +1319,7 @@
         <div class="tile-name">${escHtml(a.name)}</div>
         <div class="tile-timer" data-timer="${a.id}">${fmt(a.elapsed)}</div>
         ${progressHTML(a)}
-        <button class="btn-play" data-play="${a.id}">
-          ${isRow ? (a.running ? '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="5" y="4" width="3" height="12" fill="currentColor" rx="1"/><rect x="12" y="4" width="3" height="12" fill="currentColor" rx="1"/></svg>' : '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6 3L14 10L6 17V3Z" fill="currentColor"/></svg>') : (a.running ? '❙❙' : '⏵')}
-        </button>
+        <button class="btn-play" data-play="${a.id}">${isRow ? (a.running ? 'PAUSE' : 'PLAY') : (a.running ? '❙❙' : '⏵')}</button>
         <div class="tile-status">${a.running ? 'En cours' : 'Démarrer'}</div>
 
         <button class="btn-reset" data-reset="${a.id}">Remettre à zéro</button>
@@ -1451,7 +1449,10 @@
       if (status) status.textContent = a.running ? 'En cours' : 'Démarrer';
 
       const btnPlay = tile.querySelector('[data-play]');
-      if (btnPlay) btnPlay.textContent = a.running ? '⏸' : '▶';
+      if (btnPlay) {
+        const isMobile = window.innerWidth <= 600;
+        btnPlay.textContent = isMobile ? (a.running ? 'PAUSE' : 'PLAY') : (a.running ? '❙❙' : '⏵');
+      }
 
       // Progress bar update
       const fill  = tile.querySelector('.tile-progress-fill');
