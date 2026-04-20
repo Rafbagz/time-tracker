@@ -1319,11 +1319,12 @@
         <div class="tile-name">${escHtml(a.name)}</div>
         <div class="tile-timer" data-timer="${a.id}">${fmt(a.elapsed)}</div>
         ${progressHTML(a)}
-        <button class="btn-play" data-play="${a.id}">${a.running ? '❙❙' : '⏵'}</button>
+        <button class="btn-play" data-play="${a.id}">
+          ${isRow ? (a.running ? '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="5" y="4" width="3" height="12" fill="currentColor" rx="1"/><rect x="12" y="4" width="3" height="12" fill="currentColor" rx="1"/></svg>' : '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6 3L14 10L6 17V3Z" fill="currentColor"/></svg>') : (a.running ? '❙❙' : '⏵')}
+        </button>
         <div class="tile-status">${a.running ? 'En cours' : 'Démarrer'}</div>
 
         <button class="btn-reset" data-reset="${a.id}">Remettre à zéro</button>
-        ${isRow && !a.running ? '<span class="drag-handle">⋮⋮</span>' : ''}
       `;
 
       tile.addEventListener('click', e => {
@@ -1715,25 +1716,22 @@
   }
 
   function attachDragReorder(el, id) {
-    const handle = el.querySelector('.drag-handle');
-    if (!handle) return;
     let startY = 0, isDragging = false;
 
-    handle.addEventListener('touchstart', e => {
-      e.stopPropagation();
+    el.addEventListener('touchstart', e => {
       startY = e.touches[0].clientY;
       isDragging = true;
       el.style.transition = 'none';
       el.classList.add('tile--dragging');
     }, { passive: true });
 
-    handle.addEventListener('touchmove', e => {
+    el.addEventListener('touchmove', e => {
       if (!isDragging) return;
       e.preventDefault();
       el.style.transform = `translateY(${e.touches[0].clientY - startY}px)`;
     }, { passive: false });
 
-    handle.addEventListener('touchend', e => {
+    el.addEventListener('touchend', e => {
       if (!isDragging) return;
       isDragging = false;
       el.classList.remove('tile--dragging');
