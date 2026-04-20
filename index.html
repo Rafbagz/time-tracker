@@ -1053,7 +1053,6 @@
   <div class="header-right">
     <button class="btn-end-session" id="btnEndSession">Fini pour aujourd'hui !</button>
   </div>
-  <button class="btn-export btn-export-mobile" id="btnExportMobile" title="Exporter les données en CSV">↓ Exporter mes statistiques (CSV)</button>
   <div class="mobile-sort-inline" id="mobileSortInline">
     <button class="btn-sort active" data-sort="created">Création</button>
     <button class="btn-sort" data-sort="name">Nom</button>
@@ -1976,7 +1975,6 @@
   }
 
   document.getElementById('btnExport').addEventListener('click', exportCSV);
-  document.getElementById('btnExportMobile').addEventListener('click', exportCSV);
 
   // ── Init ─────────────────────────────────────────────────────────────────
   updateSortButtons();
